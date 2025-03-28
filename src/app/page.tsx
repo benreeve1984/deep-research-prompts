@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function Home() {
   return (
     <main>
-      <h1 className="text-4xl font-bold mb-8">Ben's Deep Research Prompts</h1>
+      <h1 className="text-4xl font-bold mb-8">Ben&apos;s Deep Research Prompts</h1>
       
       <div className="space-y-4">
         <Link 
