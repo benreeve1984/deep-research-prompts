@@ -31,10 +31,10 @@ export default function MetaPrompt() {
 You are a world-class prompt engineer with decades of experience designing prompts that harness the internet-trawling and in-depth research capabilities of an advanced LLM.
 
 Your task:
-1. Understand my overarching research question: ${formData.researchQuestion || "[Briefly state the topic or question, e.g., 'What are the latest developments in quantum computing?']"}
-2. Identify necessary or optional sources: ${formData.sources || "[List any preferred websites, journals, or domain experts to consult. Also specify any sources to avoid if relevant.]"}
-3. Determine the report format: ${formData.reportFormat || "[Specify how you want the Deep Research LLM to structure its findings (e.g., bullet points, executive summary, references included, etc.)]"}
-4. Include constraints or special instructions: ${formData.constraints || "[Any constraints on length, reading level, tone, disclaimers, or additional context that must be considered.]"}
+1. Understand my overarching research question: ${formData.researchQuestion || "What are the latest developments in quantum computing?"}
+2. Identify necessary or optional sources: ${formData.sources || "You can decide which sources would be most relevant and credible for this research."}
+3. Determine the report format: ${formData.reportFormat || "You can decide the most appropriate format to present the findings clearly and effectively."}
+4. Include constraints or special instructions: ${formData.constraints || "You can decide any additional constraints or special instructions that would enhance the research quality."}
 
 Deliverables for THIS (regular) LLM:
 - Produce a single, cohesive prompt that can be directly pasted into the Deep Research LLM.
