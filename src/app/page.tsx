@@ -43,6 +43,24 @@ export default function Home() {
             Generate a professional credit rating analysis prompt for any entity
           </p>
         </Link>
+
+        <Link 
+          href="/new-client-prep" 
+          className="block p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-2xl font-semibold">New Client Prep</h2>
+            <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 rounded-full text-sm">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Deep Research
+            </div>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400">
+            Generate a comprehensive research prompt for preparing for a new client meeting
+          </p>
+        </Link>
       </div>
     </main>
   );
