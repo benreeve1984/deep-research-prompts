@@ -13,63 +13,73 @@ export default function PrivateCapitalTeaser() {
     
     const promptTemplate = `
 Role & Context
-You are an advanced large language model with the capability for deep business and market analysis. Your task is to produce a comprehensive "teaser" document about ${name} for potential acquirers or investors. This document should strike a balance between breadth (to spark interest) and detail (to provide tangible data points and insights).
+You are an advanced large language model tasked with producing a factually grounded "teaser" document on ${name} for potential acquirers or investors. You must thoroughly validate data, cross-check sources, and explicitly acknowledge any data limitations or conflicting information. Use only publicly available, reputable sources, and if contradictory data is encountered, note the discrepancies and provide plausible explanations or disclaimers.
 
 ⸻
 
 Objectives
-1. Assess ${name}'s recent performance, including topline growth trends over a 3–5-year horizon (or longer if relevant).
-2. Identify & Contrast the company's product or service portfolio, highlighting established offerings vs. newer initiatives.
-3. Analyze the broader market environment: key trends, drivers of demand and supply, and regulatory or technological factors.
-4. Map the competitive landscape in the regions or sectors where ${name} operates, identifying main competitors or archetypes.
-5. Outline potential growth opportunities for ${name} and the strategic rationale behind each.
-6. Highlight positive attributes ("What We Like") and potential concerns ("Potential Risks" or "Areas for Due Diligence") to help guide deeper investigation.
+	1.	Assess ${name}'s recent performance (e.g., revenue, growth rates, customer metrics) over 3–5 years, citing multiple sources to confirm numbers.
+	2.	Identify & Contrast ${name}'s offerings (products/services), indicating which are established vs. newly launched and validating each with data points or source references.
+	3.	Analyze the broader market environment—covering demand- and supply-side trends, technology enablers, and regulatory considerations—using cross-checked information from at least two reputable references where possible.
+	4.	Map the competitive landscape, segmenting major players by archetype and referencing consistent, verifiable data to support claims about market positioning.
+	5.	Outline potential growth opportunities, referencing comparable market cases or success stories, while clarifying any assumptions or uncertain data points.
+	6.	Highlight both "What We Like" and "Potential Risks / Areas for Due Diligence" for ${name}, ensuring each claim is justified with data or flagged as hypothetical.
 
 ⸻
 
-Research & Analysis Requirements
-1. Historical & Current Performance
-• Provide revenue growth or other relevant performance metrics (actual or reliable estimates) for the last few years.
-• Identify and discuss the main drivers behind these trends (e.g., product launches, expansions, partnerships).
-• Contrast multiple data sources (e.g., company press releases, industry reports, financial statements, reputable media outlets).
-2. Core Offerings & Innovations
-• Describe the primary products/services, including their target markets and degree of maturity.
-• Highlight any recent or upcoming products/offerings that demonstrate innovation or potential for future growth.
-• Include details on market reception or adoption rates when available.
-3. Market Overview & Trends
-• Summarize macro trends affecting the industry or sector (demand-side changes, regulatory shifts, technological advances, etc.).
-• Explain supply-side dynamics (key competitors, supply chain complexities, partnership ecosystems).
-• Reference market reports, expert commentary, or data-driven forecasts to provide context.
-4. Competitive Landscape
-• Segment major competitors by archetype (e.g., pure-play specialists, large diversified incumbents, emerging disruptors).
-• Name key players and compare them briefly against ${name} in terms of strengths, weaknesses, or strategic focus.
-• Identify any noteworthy regional nuances if the company operates in multiple geographies.
-5. Growth Opportunities
-• Present 3–5 growth vectors or strategic opportunities (e.g., product line extensions, geographic expansion, M&A, partnerships).
-• For each, provide supporting rationale, potential scale of impact, and references to comparable success stories if available.
-• Discuss any technical, operational, or market prerequisites needed to realize these opportunities.
-6. Key Positives and Possible Concerns
-• Summarize "What We Like" about ${name} (unique assets, strong brand, market share, proprietary IP, etc.).
-• Pinpoint "Potential Risks" or aspects warranting deeper due diligence (e.g., regulatory hurdles, competitive threats, financial sustainability, cultural fit).
-• Offer balanced insights, pulling from multiple sources or expert opinions.
-7. Conclusion & Due Diligence Path
-• Recap the main takeaways about ${name} and why it might be an attractive target.
-• List the key areas or hypotheses for deeper investigation (e.g., customer concentration, product scalability, management quality).
-• Suggest possible next steps for an acquirer or investor, such as engaging with company leadership, requesting detailed financial data, or analyzing recent deal activity.
+Data Validation & Source Requirements
+	1.	Data Cross-Checking
+	•	Obtain revenue and growth figures from multiple public sources (financial statements, recognized databases, credible news outlets, investor reports, or official filings).
+	•	For each key metric, indicate the data source (e.g., footnotes, inline citations) and note if the data differs across sources.
+	•	If discrepancies exist, explain potential reasons (e.g., different fiscal calendars, preliminary vs. final reports, currency fluctuations).
+	2.	Handling Uncertain or Conflicting Information
+	•	Do not fabricate data. If exact figures are unavailable or conflicting, provide a range or an estimate that is clearly labeled as such, citing the origin of the estimate.
+	•	Include disclaimers about the reliability of estimates where necessary (e.g., "Estimates vary from $X to $Y based on different reporting standards").
+	3.	Self-Awareness & Recent Developments
+	•	For any commentary on expansions, partnerships, market entries, or organizational changes, cross-check at least two sources (press releases, company announcements, credible industry news).
+	•	If only one source is available, mention that the information is based on a single, unverified source.
+	•	If you find no legitimate confirmation, omit or label it as "unverified rumor/claim."
 
 ⸻
 
-Writing Style & Depth
-• Extensive & Factually Grounded: Provide ample detail and concrete data wherever possible, with references or short footnotes.
-• Balanced: Incorporate both positive attributes and potential red flags. If data sources differ, indicate discrepancies and possible reasons.
-• Hypothesis-Oriented: Where direct data is limited, state clear assumptions or hypotheses for further testing in due diligence.
-• Concise Professional Tone: Aim for an informative, investor-friendly style—clear headings, bullet points for key data, and well-structured analysis.
+Report Structure
+	1.	Executive Summary
+	•	Brief overview of ${name}'s positioning and a high-level snapshot of its recent performance (with key metrics and source references).
+	2.	Detailed Performance Review
+	•	3–5-year revenue trend, growth rates, and other relevant KPIs.
+	•	For each number, include the source and any conflicting data from alternative sources.
+	•	Discuss underlying growth drivers with citations (e.g., new product lines, market expansions, acquisition synergies).
+	3.	Product/Service Portfolio Analysis
+	•	Categorize offerings into "Established" vs. "Recent/Emerging," providing launch timelines and documentation or public records supporting each claim.
+	•	If adoption metrics are available (market share, user base, etc.), cite them properly.
+	4.	Market Environment & Trends
+	•	Identify demand-side drivers (shifts in customer behavior, compliance regulations, industry digital transformation).
+	•	Discuss supply-side factors (competitive intensity, barriers to entry, technological developments).
+	•	Where possible, mention at least two corroborating sources for major trends.
+	5.	Competitive Landscape
+	•	Segment competitors by archetype (e.g., specialized providers, large incumbents, disruptive startups).
+	•	Reference specific, verifiable data (market share estimates, user adoption) and explain any variations in reported figures.
+	6.	Growth Opportunities
+	•	Present 3–5 strategic areas (e.g., new product lines, partnerships, M&A).
+	•	Reference comparable market cases or success stories, citing where you derived those comparisons.
+	•	Acknowledge any assumptions or data gaps (e.g., if no direct competitor data is available).
+	7.	What We Like vs. Potential Concerns
+	•	Summarize key positive attributes (e.g., strong customer retention, unique IP, favorable brand perception).
+	•	Outline risks or areas needing due diligence (e.g., questionable financial disclosures, over-reliance on a single market, uncertain regulatory compliance).
+	•	For each point, provide a brief reference to data sources or label as an informed hypothesis if precise data is scarce.
+	8.	Conclusion & Next Steps
+	•	High-level takeaways on ${name}'s investment merits.
+	•	Specific due diligence questions or areas to investigate (financial audits, customer/partner calls, regulatory risk assessments).
+	•	Reference any data points that were insufficiently verified and could be a priority in due diligence.
 
 ⸻
 
-Final Instruction
-
-Generate a detailed, well-organized "teaser" report about ${name} according to the objectives and structure outlined above. Use credible references (reports, filings, public announcements) to bolster the analysis, and ensure the final output features clear "What We Like" vs. "Potential Concerns" points that can guide further investigation.`;
+Writing Style & Accuracy Protocol
+	•	Neutral, Fact-Based Tone: Focus on verifiable facts and label speculation or estimates accordingly.
+	•	Citations & Transparency: Each key metric or statement should either link to a credible source or include a footnote describing how the data was derived.
+	•	Conflicting Data Handling: Always acknowledge the existence of conflicting data or rumors, explaining plausible reasons for the discrepancy.
+	•	No Hallucinations: If certain data or details can't be confirmed, state "unavailable" or "uncertain." Avoid making definitive claims without evidence.
+`;
 
     navigator.clipboard.writeText(promptTemplate);
     setShowNotification(true);
