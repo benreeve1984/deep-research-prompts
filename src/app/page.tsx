@@ -82,13 +82,10 @@ export default function Home() {
 
         <Link
           href="/pc-potential-acquirers"
-          className="group block p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-500 transition-colors"
+          className="block p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
         >
-          <h2 className="text-xl font-semibold mb-2">PC Potential Acquirers</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Identify potential strategic and financial acquirers based on a company teaser report.
-          </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-2xl font-semibold">PC Potential Acquirers</h2>
             <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 rounded-full text-sm whitespace-nowrap">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -96,17 +93,17 @@ export default function Home() {
               Deep Research
             </div>
           </div>
+          <p className="text-gray-600 dark:text-gray-400">
+            Identify potential strategic and financial acquirers based on a company teaser report.
+          </p>
         </Link>
 
         <Link
           href="/procurement-win-wins"
-          className="group block p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-500 transition-colors"
+          className="block p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
         >
-          <h2 className="text-xl font-semibold mb-2">Procurement Win-Wins</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Identify non-contentious win-win negotiation points for buyer-supplier contracts.
-          </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-2xl font-semibold">Procurement Win-Wins</h2>
             <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 rounded-full text-sm whitespace-nowrap">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -114,6 +111,9 @@ export default function Home() {
               Deep Research
             </div>
           </div>
+          <p className="text-gray-600 dark:text-gray-400">
+            Identify non-contentious win-win negotiation points for buyer-supplier contracts.
+          </p>
         </Link>
       </div>
 
