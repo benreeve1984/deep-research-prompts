@@ -298,7 +298,7 @@ Deliver a short report (around 3-4 pages) that equips the partner with immediate
         </div>
       </div>
 
-      <h1 className="text-4xl font-bold mb-8">Private Capital 3-part Analysis</h1>
+      <h1 className="text-4xl font-bold mb-8">Private Capital 3-Part Analysis</h1>
       
       <div className="max-w-4xl">
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
