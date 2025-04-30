@@ -380,7 +380,7 @@ Deliver a short report (around 3-4 pages) that equips the partner with immediate
                   Copy Summary Teaser Prompt
                 </button>
                 <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                  Use with ChatGPT o1 model + attach all 3 reports
+                  Use with ChatGPT GPT-4.5 model + attach all 3 reports
                 </div>
               </div>
             </div>

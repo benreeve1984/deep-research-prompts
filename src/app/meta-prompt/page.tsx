@@ -92,7 +92,7 @@ Finally, provide me with that polished prompt—plus a **concise explanation** f
       <div className="max-w-2xl">
         <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mb-6">
           <p className="text-purple-800 dark:text-purple-200">
-            This tool helps you create a prompt for o1-Pro. When you paste this prompt into o1-Pro, it will generate a custom prompt that you can then use with the Deep Research LLM. Fill in the sections below to customize your meta-prompt template. Leave any section blank to use the default text.
+            This tool helps you create a prompt for o1-Pro or o3. When you paste this prompt into o1-Pro / o3, it will generate a custom prompt that you can then use with the Deep Research LLM. Fill in the sections below to customize your meta-prompt template. Leave any section blank to use the default text.
           </p>
         </div>
 
