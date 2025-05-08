@@ -2,6 +2,7 @@ import React from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { Toaster } from 'react-hot-toast';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,6 +22,7 @@ export default function RootLayout({
         <div className="min-h-screen max-w-6xl mx-auto px-4 py-8">
           {children}
         </div>
+        <Toaster position="bottom-right" />
       </body>
     </html>
   );
