@@ -6,6 +6,8 @@ import { toast } from 'react-hot-toast';
 export default function LangFuseTest() {
   const [companyName, setCompanyName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [promptText, setPromptText] = useState('');
+  const [showManualCopy, setShowManualCopy] = useState(false);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -41,6 +43,7 @@ export default function LangFuseTest() {
     }
     
     setLoading(true);
+    setShowManualCopy(false);
     try {
       const response = await fetch('/api/fetch-prompt', {
         method: 'POST',
@@ -52,12 +55,20 @@ export default function LangFuseTest() {
         throw new Error(data.error || 'Failed to fetch prompt');
       }
       
+      // Save the prompt text for manual copy if needed
+      setPromptText(data.prompt);
+      
       // Try to copy to clipboard
       const copySuccess = await copyToClipboard(data.prompt);
       if (copySuccess) {
         toast.success('Prompt copied to clipboard!');
       } else {
-        toast.error('Failed to copy to clipboard');
+        // Show manual copy option
+        setShowManualCopy(true);
+        toast('Please use the textarea below to copy manually', { 
+          icon: '📋',
+          duration: 5000
+        });
       }
     } catch (error) {
       toast.error('Failed to copy prompt');
@@ -125,6 +136,43 @@ export default function LangFuseTest() {
                 </>
               )}
             </button>
+            
+            {showManualCopy && promptText && (
+              <div className="mt-6 p-4 border border-amber-300 dark:border-amber-700 rounded-lg bg-amber-50 dark:bg-amber-900/20">
+                <h3 className="text-amber-800 dark:text-amber-200 font-medium mb-2">
+                  Automatic clipboard copy failed in this browser
+                </h3>
+                <p className="text-amber-700 dark:text-amber-300 text-sm mb-3">
+                  Please copy the text manually from the box below:
+                </p>
+                <div className="relative">
+                  <textarea
+                    value={promptText}
+                    readOnly
+                    onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-white font-mono text-sm"
+                    rows={6}
+                  ></textarea>
+                  <button
+                    onClick={() => {
+                      try {
+                        // This is a direct user action so may work in Safari
+                        navigator.clipboard.writeText(promptText);
+                        toast.success('Copied!');
+                      } catch (e) {
+                        // Do nothing, user will copy manually
+                      }
+                    }}
+                    className="absolute top-2 right-2 p-2 bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 rounded hover:bg-blue-200 dark:hover:bg-blue-700"
+                    title="Try copy again"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
