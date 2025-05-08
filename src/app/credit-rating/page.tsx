@@ -1,105 +1,78 @@
 'use client';
 
 /* eslint-disable react/no-unescaped-entities */
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { toast } from 'react-hot-toast';
 
 export default function CreditRating() {
   const [companyName, setCompanyName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [promptText, setPromptText] = useState("");
   const [showNotification, setShowNotification] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const generatePrompt = () => {
-    const name = companyName.trim() || "Sample Company";
+  // Fetch prompt when company name changes (with debounce)
+  useEffect(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+
+    if (!companyName.trim()) {
+      setPromptText("");
+      return;
+    }
+
+    setIsLoading(true);
     
-    const promptTemplate = `
-**Polished Prompt for Deep Research LLM (${name} Credit Rating Analysis)**
+    // Debounce the API call to avoid too many requests
+    timerRef.current = setTimeout(async () => {
+      try {
+        const response = await fetch('/api/fetch-prompt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            promptName: 'credit-rating', 
+            company: companyName 
+          }),
+        });
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch prompt');
+        }
+        
+        setPromptText(data.prompt);
+      } catch (error) {
+        console.error('Error fetching prompt:', error);
+        toast.error('Failed to fetch prompt');
+        setPromptText("");
+      } finally {
+        setIsLoading(false);
+      }
+    }, 500);
 
----
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [companyName]);
 
-**Role & Task**  
-You are a senior credit analyst at a leading credit rating agency, tasked with preparing a detailed and professional credit rating report for **${name}'s senior unsecured debt**. Your ultimate goal is to determine and clearly articulate a single credit rating (e.g., 'BBB-', 'Ba1', etc.) through rigorous and comprehensive research.
+  const handleCopyPrompt = () => {
+    if (!promptText) {
+      toast.error('No prompt to copy');
+      return;
+    }
 
-### Research Requirements
-Conduct an exhaustive, internet-based research exercise covering, but not limited to:
-
-1. **Company Documentation**
-   - Annual reports, audited financial statements, interim reports, investor presentations, and any regulatory filings for **${name}**.
-   - Company website and official disclosures.
-
-2. **External Sources**
-   - Relevant industry and sector analysis reports.
-   - Credible news articles, press releases, and coverage related to financial performance, strategic decisions, and key management developments.
-   - Third-party analyst coverage, commentary, ratings, or opinions.
-
-**Source Verification & Handling**
-- Prioritize primary sources (audited financials, regulatory filings, direct company disclosures).
-- Clearly document and evaluate credibility and reliability of secondary sources.
-- Explicitly indicate how discrepancies or conflicting information have been assessed and reconciled.
-
-### Final Report Format & Sections
-Your report should emulate best-in-class standards from major rating agencies (S&P, Moody's, Scope Ratings, Fitch). Clearly segment your analysis into these exact sections:
-
-1. **Executive Summary & Final Rating**
-   - Provide your recommended single, definitive credit rating.
-   - Briefly summarize your rationale and key rating factors.
-
-2. **Rating Rationale**
-   - Clearly explain the primary reasons for your assigned rating.
-   - Outline influential macroeconomic, industry-specific, and company-specific factors.
-
-3. **Company Overview & Industry Analysis**
-   - Brief history, ownership structure, business model, product/service offerings, and strategic direction.
-   - Industry trends, competitive landscape, market position, growth prospects, and regulatory environment relevant to ${name}.
-
-4. **Business Risk Assessment**
-   - Analyze competitive advantages, market share, revenue stability, and diversification.
-   - Highlight key risks such as competitive pressures, regulatory changes, or economic volatility.
-
-5. **Financial Risk Assessment**
-   - Provide comprehensive evaluation of financial metrics (revenue growth, EBITDA margins, net margins, leverage, liquidity, etc.).
-   - Discuss historical financial stability and forward-looking projections.
-
-6. **Capital Structure & Liquidity Analysis**
-   - Detail the senior unsecured debt's position within ${name}'s capital structure.
-   - Evaluate debt maturities, refinancing risk, credit facilities, and overall liquidity.
-   - Examine covenants or protective terms influencing creditworthiness.
-
-7. **Key Rating Drivers & Rating Sensitivities**
-   - Clearly outline factors that support the rating (stable income, solid balance sheet, etc.).
-   - Discuss potential triggers for an upgrade or downgrade (increased leverage, liquidity issues, industry disruptions, etc.).
-
-8. **Environmental, Social, and Governance (ESG) Considerations**
-   - Analyze how ESG factors might impact ${name}'s credit profile (governance structures, regulatory compliance, sustainability initiatives).
-
-9. **Peer Group Analysis**
-   - Compare ${name}'s metrics and risk profile against peers in the same sector.
-
-10. **Conclusion & Outlook**
-    - Restate your recommended credit rating.
-    - Summarize the outlook (stable, positive, negative) and the major drivers behind it.
-
-11. **References**
-    - List all references, ensuring clarity and traceability for external verification.
-
-### Style, Tone & Constraints
-- **Professional & Formal Tone**: Maintain objectivity, clarity, and conciseness in line with major credit rating agency reports.
-- **Data Handling & Assumptions**: Label assumptions where data gaps exist. Note how they may affect the rating conclusion.
-- **Reconciliation of Conflicting Data**: Describe how sources were prioritized or discrepancies were resolved.
-
----
-
-### Concise Explanation of Prompt Effectiveness
-1. **Role and Scope**: Defines you as a seasoned credit analyst, focusing on a formal agency-style approach.
-2. **Structured Format**: Ensures a standardized, section-by-section deep dive covering key elements of creditworthiness.
-3. **Research Rigor**: Demands thorough source verification and transparency, enhancing credibility.
-4. **Definitive Outcome**: Calls for a single, final credit rating, preventing ambiguity.
-5. **Professional Tone**: Minimizes extraneous commentary and keeps the analysis focused.
-
----`;
-
-    navigator.clipboard.writeText(promptTemplate);
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 3000);
+    try {
+      navigator.clipboard.writeText(promptText);
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 3000);
+    } catch (error) {
+      console.error('Copy failed:', error);
+      toast.error('Failed to copy. Please try again.');
+    }
   };
 
   return (
@@ -140,10 +113,19 @@ Your report should emulate best-in-class standards from major rating agencies (S
           </div>
 
           <button
-            onClick={generatePrompt}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+            onClick={handleCopyPrompt}
+            disabled={isLoading || !promptText}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Copy Prompt
+            {isLoading ? (
+              <span className="inline-flex items-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading Prompt...
+              </span>
+            ) : "Copy Prompt"}
           </button>
 
           {showNotification && (

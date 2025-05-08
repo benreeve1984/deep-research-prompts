@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, ChangeEvent } from "react";
+import React, { useState, useEffect, useRef, ChangeEvent } from "react";
 import Link from "next/link";
+import { toast } from 'react-hot-toast';
 
 export default function NewClientPrep() {
   const [companyName, setCompanyName] = useState("");
@@ -9,6 +10,9 @@ export default function NewClientPrep() {
   const [clientDepartment, setClientDepartment] = useState("");
   const [sources, setSources] = useState<string[]>([]);
   const [showNotification, setShowNotification] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [promptText, setPromptText] = useState("");
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const sourceOptions = [
     "Company Website",
@@ -35,114 +39,75 @@ export default function NewClientPrep() {
     });
   };
 
-  const generatePrompt = () => {
-    const sourcesText = sources.map(source => `- ${source}`).join('\n');
+  // Fetch prompt when inputs change (with debounce)
+  useEffect(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+
+    // Clear prompt if required fields are missing
+    if (!companyName.trim() || !clientRole.trim() || !clientDepartment.trim() || sources.length === 0) {
+      setPromptText("");
+      return;
+    }
+
+    setIsLoading(true);
     
-    return `# DEEP RESEARCH PROMPT
+    // Debounce the API call to avoid too many requests
+    timerRef.current = setTimeout(async () => {
+      try {
+        // Format sources as a string
+        const sourcesText = sources.map(source => `- ${source}`).join('\n');
+        
+        const response = await fetch('/api/fetch-prompt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            promptName: 'new-client-prep', 
+            company: companyName,
+            role: clientRole,
+            department: clientDepartment,
+            sources: sourcesText
+          }),
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch prompt');
+        }
+        
+        setPromptText(data.prompt);
+      } catch (error) {
+        console.error('Error fetching prompt:', error);
+        toast.error('Failed to fetch prompt');
+        setPromptText("");
+      } finally {
+        setIsLoading(false);
+      }
+    }, 500);
 
-You are a highly advanced research assistant tasked with **analyzing a target firm's strategic challenges, market position, and investment priorities.** Your goal is to produce actionable insights and preliminary hypotheses that a management consultant can use in an upcoming client meeting.
-
----
-
-## 1. Context
-
-- **Company Name:** ${companyName}
-- **Client Role / Department:** ${clientRole}, ${clientDepartment}
-- **Meeting Objective:** I am meeting with a representative from ${companyName} for the first time to understand their firm's top strategic priorities, market challenges, and potential gaps or opportunities.
-
----
-
-## 2. Potential Data Sources
-
-Please assume we have access to the following sources. Where appropriate, reference direct quotes, summaries, or key data from each:
-
-${sourcesText}
-
----
-
-## 3. Research Goals
-
-1. **Identify Key Strategic Issues**  
-   - Summarize the firm's publicly known challenges, strategic themes, and performance trends.  
-   - Note any particular market, operational, or regulatory pressures highlighted in the sources.
-
-2. **Compare to Market/Peers**  
-   - Determine how these issues align with or differ from industry peers and benchmarks.  
-   - Note specific areas where the firm may be off-market or lagging competitors.
-
-3. **Outline Growth & Investment Priorities**  
-   - Identify the firm's announced or rumored investment priorities.  
-   - Suggest where additional focus or investment might be needed, based on industry trends and peer comparisons.
-
-4. **Formulate Preliminary Hypotheses**  
-   - Propose 2–3 broad hypotheses on the firm's likely near-term strategic moves.  
-   - Explain the reasoning, potential risks, and implications of each hypothesis.
-
----
-
-## 4. Research Methodology
-
-1. **Data Compilation**  
-   - Collect relevant excerpts, data points, and quotes from each source listed above.  
-   - Highlight any consistent themes or discrepancies across sources.
-
-2. **Analysis & Synthesis**  
-   - For each critical insight, describe the business implications, possible root causes, and strategic significance.  
-   - Cross-check findings against peer or competitor data to determine relative positioning.
-
-3. **Conclusion & Next Steps**  
-   - Summarize the top 2–3 takeaways from the research.  
-   - Link each takeaway to a suggested line of inquiry or potential action item for the upcoming client meeting.
-
----
-
-## 5. Output Requirements
-
-Please structure your research output as follows:
-
-1. **Executive Summary (2–3 bullet points)**  
-   - A concise overview of the most urgent or impactful strategic concerns facing the firm.
-
-2. **Detailed Analysis**  
-   - Organize by topic (e.g., "Market Trends," "Financial Indicators," "Organizational Capabilities," "Digital Transformation," etc.).  
-   - Present facts from the sources, along with your interpretation or commentary.
-
-3. **Peer Comparison**  
-   - Briefly outline how the firm stacks up against direct competitors or industry benchmarks.
-
-4. **Hypotheses & Potential Next Steps**  
-   - List 2–3 actionable hypotheses for potential strategic moves.  
-   - Mention key risks, resource requirements, or success factors.
-
-5. **References**  
-   - Provide citations (e.g., "Source: [press release, date]") where relevant, so we can trace conclusions back to original materials.
-
----
-
-## 6. Style & Tone
-
-- **Concise and Business-Focused**: Use short paragraphs, bullet points, and clear headers.  
-- **Evidence-Driven**: Include direct quotes or data references to support key points.  
-- **Action-Oriented**: Emphasize why each finding matters and how it may inform the client's decision-making.
-
----
-
-## 7. Final Instructions
-
-1. Conduct a thorough review of the listed sources to extract key information.  
-2. Synthesize the findings into an **insightful, executive-level analysis**.  
-3. Present concrete, hypothesis-driven recommendations that the management consultant can bring to the client meeting.
-
----
-
-**Please produce a comprehensive research report in Markdown format, following the structure above.**`;
-  };
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [companyName, clientRole, clientDepartment, sources]);
 
   const handleCopy = () => {
-    const prompt = generatePrompt();
-    navigator.clipboard.writeText(prompt);
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 3000);
+    if (!promptText) {
+      toast.error('No prompt to copy');
+      return;
+    }
+    
+    try {
+      navigator.clipboard.writeText(promptText);
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 3000);
+    } catch (error) {
+      console.error('Copy failed:', error);
+      toast.error('Failed to copy. Please try again.');
+    }
   };
 
   return (
@@ -229,9 +194,18 @@ Please structure your research output as follows:
 
         <button
           onClick={handleCopy}
-          className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+          disabled={isLoading || !promptText}
+          className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Copy Prompt
+          {isLoading ? (
+            <span className="inline-flex items-center">
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Loading Prompt...
+            </span>
+          ) : "Copy Prompt"}
         </button>
 
         {showNotification && (

@@ -130,9 +130,9 @@ export default function PC3PartAnalysis() {
     
     try {
       navigator.clipboard.writeText(prompts.target);
-      setNotificationText("Detailed Target Report prompt copied!");
-      setShowNotification(true);
-      setTimeout(() => setShowNotification(false), 3000);
+    setNotificationText("Detailed Target Report prompt copied!");
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 3000);
     } catch (error) {
       console.error('Copy failed:', error);
       toast.error('Failed to copy. Please try again.');
@@ -147,9 +147,9 @@ export default function PC3PartAnalysis() {
     
     try {
       navigator.clipboard.writeText(prompts.market);
-      setNotificationText("Detailed Market Scan prompt copied!");
-      setShowNotification(true);
-      setTimeout(() => setShowNotification(false), 3000);
+    setNotificationText("Detailed Market Scan prompt copied!");
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 3000);
     } catch (error) {
       console.error('Copy failed:', error);
       toast.error('Failed to copy. Please try again.');
@@ -164,9 +164,9 @@ export default function PC3PartAnalysis() {
     
     try {
       navigator.clipboard.writeText(prompts.acquirers);
-      setNotificationText("Potential Acquirer Report prompt copied!");
-      setShowNotification(true);
-      setTimeout(() => setShowNotification(false), 3000);
+    setNotificationText("Potential Acquirer Report prompt copied!");
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 3000);
     } catch (error) {
       console.error('Copy failed:', error);
       toast.error('Failed to copy. Please try again.');
@@ -181,9 +181,9 @@ export default function PC3PartAnalysis() {
     
     try {
       navigator.clipboard.writeText(prompts.summary);
-      setNotificationText("Summary Teaser Report prompt copied!");
-      setShowNotification(true);
-      setTimeout(() => setShowNotification(false), 3000);
+    setNotificationText("Summary Teaser Report prompt copied!");
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 3000);
     } catch (error) {
       console.error('Copy failed:', error);
       toast.error('Failed to copy. Please try again.');
