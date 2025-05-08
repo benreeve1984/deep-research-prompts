@@ -1,53 +1,83 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { toast } from 'react-hot-toast';
 
 export default function ProcurementWinWins() {
   const [clientName, setClientName] = useState("");
   const [supplierName, setSupplierName] = useState("");
   const [contractNature, setContractNature] = useState("");
   const [showNotification, setShowNotification] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [promptText, setPromptText] = useState("");
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const generatePrompt = () => {
-    const client = clientName.trim() || "Buyer";
-    const supplier = supplierName.trim() || "Seller";
-    const nature = contractNature.trim() || "contract";
+  // Fetch prompt when inputs change (with debounce)
+  useEffect(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+
+    // Clear prompt if required fields are missing
+    if (!clientName.trim() || !supplierName.trim() || !contractNature.trim()) {
+      setPromptText("");
+      return;
+    }
+
+    setIsLoading(true);
     
-    const promptTemplate = `
-Please conduct a deep examination of non-price negotiation points ${client} (as Buyer) could pursue with ${supplier} (as Seller) for ${nature}.
+    // Debounce the API call to avoid too many requests
+    timerRef.current = setTimeout(async () => {
+      try {
+        const response = await fetch('/api/fetch-prompt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            promptName: 'procurement-win-wins', 
+            buyer: clientName,
+            seller: supplierName,
+            contract: contractNature
+          }),
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch prompt');
+        }
+        
+        setPromptText(data.prompt);
+      } catch (error) {
+        console.error('Error fetching prompt:', error);
+        toast.error('Failed to fetch prompt');
+        setPromptText("");
+      } finally {
+        setIsLoading(false);
+      }
+    }, 500);
 
-1. **Contextual Research:**  
-   - Investigate ${client}–${supplier} historical contracts, strategic supplier relationships, and typical industry practices.  
-   - Focus on common non-price considerations such as supply chain reliability, exclusivity, capacity planning, R&D collaborations, IP/patent strategies, sustainability, etc.
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [clientName, supplierName, contractNature]);
 
-2. **Negotiation Levers:**  
-   - Brainstorm potential negotiation levers that are non-contentious and avoid direct price discounts.  
-   - For each lever, estimate:  
-     - **Mutual Value** (how beneficial it is to ${client} and ${supplier} combined)  
-     - **Difficulty/Cost to Deliver** for each party  
-     - **Overall Ranking** or Score  
-     - **Rationale** (1–2 sentences on why this lever is beneficial or feasible)
-
-3. **Structured Output:**  
-   - Create a table or list with columns or subheadings:  
-     - Negotiation Point  
-     - Description / Value Proposition  
-     - Mutual Value Score (e.g., High / Medium / Low)  
-     - Difficulty to Deliver for ${client} (High / Medium / Low)  
-     - Difficulty to Deliver for ${supplier} (High / Medium / Low)  
-     - Brief Rationale  
-
-4. **Depth & Clarity:**  
-   - Support your reasoning with relevant industry examples or references to known practices.  
-   - Emphasize clarity and completeness—avoid superficial bullet points.  
-   - Provide an overall conclusion, summarizing which levers appear most mutually beneficial at relatively low difficulty.
-
-Generate your analysis now.`;
-
-    navigator.clipboard.writeText(promptTemplate);
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 3000);
+  const handleCopy = () => {
+    if (!promptText) {
+      toast.error('No prompt to copy');
+      return;
+    }
+    
+    try {
+      navigator.clipboard.writeText(promptText);
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 3000);
+    } catch (error) {
+      console.error('Copy failed:', error);
+      toast.error('Failed to copy. Please try again.');
+    }
   };
 
   return (
@@ -133,10 +163,19 @@ Generate your analysis now.`;
           </div>
 
           <button
-            onClick={generatePrompt}
-            className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+            onClick={handleCopy}
+            disabled={isLoading || !promptText}
+            className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Copy Prompt
+            {isLoading ? (
+              <span className="inline-flex items-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading Prompt...
+              </span>
+            ) : "Copy Prompt"}
           </button>
 
           {showNotification && (

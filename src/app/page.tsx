@@ -6,26 +6,8 @@ export default function Home() {
       <h1 className="text-4xl font-bold mb-8">Ben&apos;s Deep Research Prompts</h1>
       
       <div className="space-y-4">
-        <Link 
-          href="/meta-prompt" 
-          className="block p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-2xl font-semibold">Meta Prompt Generator</h2>
-            <div className="flex items-center gap-2 px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-100 rounded-full text-sm whitespace-nowrap">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
-              o1-Pro
-            </div>
-          </div>
-          <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
-            <p className="text-purple-800 dark:text-purple-200">
-              Create a prompt for o1-Pro that will generate a custom prompt for the Deep Research LLM. This tool helps you design the perfect research prompt through a two-step process: first, it generates a prompt for o1-Pro, and then o1-Pro will create a specialized prompt for the Deep Research LLM.
-            </p>
-          </div>
-        </Link>
-
+        {/* Meta Prompt mode hidden from navigation but still accessible via direct URL */}
+        
         <Link 
           href="/credit-rating" 
           className="block p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"

@@ -1,117 +1,83 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { toast } from 'react-hot-toast';
 
 export default function UKPropertyValuation() {
   const [address, setAddress] = useState("");
   const [showNotification, setShowNotification] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [promptText, setPromptText] = useState("");
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const generatePrompt = () => {
-    const propertyAddress = address.trim() || "123 Sample Street, London, UK";
-    const today = new Date().toISOString().split('T')[0];
+  // Fetch prompt when address changes (with debounce)
+  useEffect(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+
+    // Clear prompt if address is missing
+    if (!address.trim()) {
+      setPromptText("");
+      return;
+    }
+
+    setIsLoading(true);
     
-    const promptTemplate = `
-████ SYSTEM ROLE (immutable) ████
-You are "Deep‑Valuer‑LLM", a professional UK residential valuation analyst.  
-Your work must comply with:  
-• RICS Valuation – Global Standards (Red Book) 2025 + UK National Supplement.  
-• RICS PS "Bank Lending Valuations & Mortgage Lending Value" (2022).  
-• UK Finance Lenders' Handbook, FCA MCOB 4.4A, PRA SS20/15.  
+    // Debounce the API call to avoid too many requests
+    timerRef.current = setTimeout(async () => {
+      try {
+        // Get today's date formatted as YYYY-MM-DD
+        const today = new Date().toISOString().split('T')[0];
+        
+        const response = await fetch('/api/fetch-prompt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            promptName: 'uk-property-valuation', 
+            address: address.trim(),
+            date: today
+          }),
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch prompt');
+        }
+        
+        setPromptText(data.prompt);
+      } catch (error) {
+        console.error('Error fetching prompt:', error);
+        toast.error('Failed to fetch prompt');
+        setPromptText("");
+      } finally {
+        setIsLoading(false);
+      }
+    }, 500);
 
-Outputs must be:  
-1. Factual, transparent, fully sourced (author‑year inline → numbered Bibliography).  
-2. In British English & metric units.  
-3. Structured exactly as per the *Deliverables Template* below.  
-4. Explicit about every assumption, data limit, and confidence rating.  
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [address]);
 
-If critical data cannot be obtained, refuse with a **Data Deficiency Alert** suggesting a full RICS inspection.
-
-████ USER TASK ████
-Value the following property for first‑charge mortgage underwriting:
-
-    Address: ${propertyAddress}  
-    Valuation date: ${today}
-
-Assume the commissioning client is a major UK retail bank; their LTV policy is unknown, so provide full risk commentary and lender conditions.
-
-████ DELIVERABLES TEMPLATE ████
-Return a single Markdown file with:
-
-| # | Section | Key contents |
-|---|---------|--------------|
-| 0 | Executive Digest | Headline Market Value; ± % confidence; top‑3 risks & mitigations. |
-| 1 | Scope & Compliance | Statement of Red‑Book compliance; basis of value; special assumptions; independence & PI clause. |
-| 2 | Property Profile | Title/tenure, UPRN, coordinates, age, construction, accommodation, gross internal area (GIA), EPC rating. |
-| 3 | Data Log & Methodology | Table logging every dataset (name, query, timestamp, row‑count, coverage score). Include shell/API commands where practical. |
-| 4 | Comparable Analysis | ≥ 5 sales comps (≤ 12 m; radius ≤ 1 km if possible); full adjustment grid; weighting algorithm; outlier justification. |
-| 5 | Triangulation Checks | (a) £/m² vs postcode deciles; (b) AVM estimate(s) + confidence; (c) hedonic regression on ≥ 30 local sales; (d) HPI‑indexed older comp. Show maths. |
-| 6 | Risk & Uncertainty | Score at least six risk factors (probability × impact heat‑map); include ESG/climate, data sparsity, hidden defects. |
-| 7 | Valuer's Opinion & Lender Conditions | Final Market Value (nearest £1 000); uncertainty band; recommended lender actions (e.g. retention, EWS1, reduced LTV). |
-| 8 | Bibliography | Numbered list of every source cited. |
-| A | Appendices | A1 raw comps CSV; A2 code snippets; A3 imagery/map links; A4 diagnostic plots (optional). |
-
-████ METHOD WORKFLOW ████
-1. **Initialisation**  
-   – Resolve UPRN & coordinates (ONS AddressBase / gov‑UK API).  
-   – Set valuation date (today if none supplied).
-
-2. **Data Acquisition (log each)**  
-   a. **EPC Register** → floor area, rating, construction.  
-   b. **HM Land Registry Price Paid Data** → ≤ 24 m sales within 1 km, same property type.  
-   c. **Property portal scrape/API** (Rightmove/Zoopla) → current & archived listings; photos, floorplans.  
-   d. **Google Maps & Street View** → exterior imagery; note imagery date.  
-   e. **Environment Agency & BGS** → flood, subsidence, radon layers.  
-   f. **Third‑party AVM** (e.g. Hometrack widget value + confidence).  
-   g. **ONS/UK HPI** → time‑adjustment indices.  
-   h. Optional: LiDAR roofprint check; school‑quality or crime layers for locational nuance.
-
-3. **Data Cleansing**  
-   – Remove sale‑price outliers (IQR × 1.5 or 3 σ).  
-   – Standardise attributes; impute missing GIA via EPC or regression.  
-   – Flag data scarcity (< 5 comps in 12 m) → ↑ uncertainty.
-
-4. **Comparable Selection & Adjustment**  
-   – Compute Mahalanobis distance on (age, beds, GIA, geo).  
-   – Select ≥ 5 closest; adjust for: date (HPI), size (€/m² elasticity), quality (photo‑based), parking, outdoor space, tenure.  
-   – Weight by 1 / (adjustment%²); present grid.
-
-5. **Triangulation / Cross‑Checks**  
-   – **Hedonic model**: OLS on ≥ 30 local sales; features = log(GIA), beds, EPC, geohash. Report predicted £ + RMSE.  
-   – **AVM**: record value; compute delta vs comp‑based.  
-   – **£/m² sanity** against postcode‑sector deciles & IQR.  
-   – **Manual override rule**: if any method diverges > 15 % explain why and adjust reconciliation weights.
-
-6. **Reconciliation**  
-   – Default weights: comps 60 %, hedonic 20 %, AVM 15 %, sanity 5 %.  
-   – Modify weights if justified (e.g. low comp count → decrease comps weight).  
-   – Produce final Market Value; provide ± (> max{RMSE, 5 %}) confidence.
-
-7. **Risk Assessment**  
-   – Score each factor 1‑5 (probability) × 1‑5 (impact) → heat‑map.  
-   – Mandatory factors: market volatility; physical unseen issues; ESG/energy; legal/title; data quality; neighbourhood externalities; construction type; climate/flood.  
-   – Recommend lender mitigations (LTV cap, retention, specialist reports).
-
-8. **Output Assembly**  
-   – Compile sections 0‑8 precisely.  
-   – Insert fenced code/CSV blocks.  
-   – Include Red‑Book "material valuation uncertainty" clause if volatility or data gap justifies.  
-   – End with valuer signature placeholder and liability wording.
-
-████ STYLE & CITATION RULES ████
-• Analytical, direct prose; no marketing adjectives.  
-• Inline citations (Author Year §Section) – match to Bibliography numbers.  
-• Use SI units; numbers with thousands‑separator.  
-• Headings: ##, ###, #### hierarchy exactly.  
-
-████ SAFETY ████
-If any critical investigative step fails (e.g. EPC record missing, no comps), stop and issue **Data Deficiency Alert** with recommended next action (drive‑by, full inspection, structural engineer).
-
-████ END OF PROMPT ████`;
-
-    navigator.clipboard.writeText(promptTemplate);
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 3000);
+  const handleCopy = () => {
+    if (!promptText) {
+      toast.error('No prompt to copy');
+      return;
+    }
+    
+    try {
+      navigator.clipboard.writeText(promptText);
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 3000);
+    } catch (error) {
+      console.error('Copy failed:', error);
+      toast.error('Failed to copy. Please try again.');
+    }
   };
 
   return (
@@ -152,10 +118,19 @@ If any critical investigative step fails (e.g. EPC record missing, no comps), st
           </div>
 
           <button
-            onClick={generatePrompt}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+            onClick={handleCopy}
+            disabled={isLoading || !promptText}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Copy Prompt
+            {isLoading ? (
+              <span className="inline-flex items-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading Prompt...
+              </span>
+            ) : "Copy Prompt"}
           </button>
 
           {showNotification && (
