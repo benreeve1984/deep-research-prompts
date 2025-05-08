@@ -159,7 +159,7 @@ export default function LangFuseTest() {
                         // This is a direct user action so may work in Safari
                         navigator.clipboard.writeText(promptText);
                         toast.success('Copied!');
-                      } catch (e) {
+                      } catch {
                         // Do nothing, user will copy manually
                       }
                     }}
