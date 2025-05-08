@@ -14,7 +14,11 @@ export async function POST(req: NextRequest) {
     // Compile the prompt with the company variable
     const compiled = prompt.compile({ company });
     return NextResponse.json({ prompt: compiled });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch or compile prompt', details: error?.message }, { status: 500 });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json(
+      { error: 'Failed to fetch or compile prompt', details: errorMessage },
+      { status: 500 }
+    );
   }
 } 
