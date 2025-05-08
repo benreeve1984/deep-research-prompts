@@ -12,12 +12,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { company } = await req.json();
-    console.log('Initializing Langfuse with config:', { 
-      publicKeyExists: !!process.env.LANGFUSE_PUBLIC_KEY,
-      secretKeyExists: !!process.env.LANGFUSE_SECRET_KEY,
-      baseUrl: process.env.LANGFUSE_HOST || 'https://cloud.langfuse.com'
-    });
+    // Parse the request body
+    const body = await req.json();
+    const { promptName = 'test', ...variables } = body;
+    
+    console.log(`Initializing Langfuse to fetch prompt "${promptName}" with variables:`, variables);
 
     const langfuse = new Langfuse({
       publicKey: process.env.LANGFUSE_PUBLIC_KEY,
@@ -25,13 +24,12 @@ export async function POST(req: NextRequest) {
       baseUrl: process.env.LANGFUSE_HOST || 'https://cloud.langfuse.com',
     });
 
-    console.log('Fetching prompt "test" with label "production"');
-    // Get the production prompt
-    const prompt = await langfuse.getPrompt('test', undefined, { label: 'production' });
+    // Get the production prompt with the specified name
+    const prompt = await langfuse.getPrompt(promptName, undefined, { label: 'production' });
     
-    console.log('Prompt fetched successfully, compiling with company:', company);
-    // Compile the prompt with the company variable
-    const compiled = prompt.compile({ company });
+    console.log(`Prompt "${promptName}" fetched successfully, compiling with variables:`, variables);
+    // Compile the prompt with the provided variables
+    const compiled = prompt.compile(variables);
     
     return NextResponse.json({ prompt: compiled });
   } catch (error: unknown) {

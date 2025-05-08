@@ -1,279 +1,193 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { toast } from 'react-hot-toast';
 
 export default function PC3PartAnalysis() {
   const [targetCompany, setTargetCompany] = useState("");
-  const [showNotification, setShowNotification] = useState(false);
+  const [isLoading, setIsLoading] = useState({
+    target: false,
+    market: false,
+    acquirers: false,
+    summary: false
+  });
+  const [prompts, setPrompts] = useState({
+    target: "",
+    market: "",
+    acquirers: "",
+    summary: ""
+  });
   const [notificationText, setNotificationText] = useState("");
+  const [showNotification, setShowNotification] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch prompts when company name changes (with debounce)
+  useEffect(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+
+    if (!targetCompany.trim()) {
+      setPrompts({
+        target: "",
+        market: "",
+        acquirers: "",
+        summary: ""
+      });
+      return;
+    }
+
+    setIsLoading({
+      target: true,
+      market: true,
+      acquirers: true,
+      summary: true
+    });
+    
+    // Debounce the API calls to avoid too many requests
+    timerRef.current = setTimeout(async () => {
+      try {
+        // Get today's date for the summary prompt
+        const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        
+        // Fetch target prompt
+        const targetResponse = await fetch('/api/fetch-prompt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            promptName: 'pc-detailed-target', 
+            company: targetCompany 
+          }),
+        });
+        const targetData = await targetResponse.json();
+        
+        // Fetch market scan prompt
+        const marketResponse = await fetch('/api/fetch-prompt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            promptName: 'pc-market-scan', 
+            company: targetCompany 
+          }),
+        });
+        const marketData = await marketResponse.json();
+        
+        // Fetch acquirers prompt
+        const acquirersResponse = await fetch('/api/fetch-prompt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            promptName: 'pc-acquirers', 
+            company: targetCompany 
+          }),
+        });
+        const acquirersData = await acquirersResponse.json();
+        
+        // Fetch summary prompt
+        const summaryResponse = await fetch('/api/fetch-prompt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            promptName: 'pc-summary-teaser', 
+            company: targetCompany,
+            date: today
+          }),
+        });
+        const summaryData = await summaryResponse.json();
+        
+        setPrompts({
+          target: targetData.prompt || "",
+          market: marketData.prompt || "",
+          acquirers: acquirersData.prompt || "",
+          summary: summaryData.prompt || ""
+        });
+      } catch (error) {
+        console.error('Error fetching prompts:', error);
+        toast.error('Failed to fetch one or more prompts');
+      } finally {
+        setIsLoading({
+          target: false,
+          market: false,
+          acquirers: false,
+          summary: false
+        });
+      }
+    }, 500);
+
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [targetCompany]);
 
   const generateTargetPrompt = () => {
-    const company = targetCompany.trim() || "COMPANY";
+    if (!prompts.target) {
+      toast.error('No prompt to copy');
+      return;
+    }
     
-    const promptTemplate = `
-Role & Context
-You are an advanced large language model tasked with producing a factually grounded "teaser" document on ${company} for potential acquirers or investors. You must thoroughly validate data, cross-check sources, and explicitly acknowledge any data limitations or conflicting information. Use only publicly available, reputable sources, and if contradictory data is encountered, note the discrepancies and provide plausible explanations or disclaimers.
-
-⸻
-
-Objectives
-	1.	Assess ${company}'s recent performance (e.g., revenue, growth rates, customer metrics) over 3–5 years, citing multiple sources to confirm numbers.
-	2.	Identify & Contrast ${company}'s offerings (products/services), indicating which are established vs. newly launched and validating each with data points or source references.
-	3.	Analyze the broader market environment—covering demand- and supply-side trends, technology enablers, and regulatory considerations—using cross-checked information from at least two reputable references where possible.
-	4.	Map the competitive landscape, segmenting major players by archetype and referencing consistent, verifiable data to support claims about market positioning.
-	5.	Outline potential growth opportunities, referencing comparable market cases or success stories, while clarifying any assumptions or uncertain data points.
-	6.	Highlight both "What We Like" and "Potential Risks / Areas for Due Diligence" for ${company}, ensuring each claim is justified with data or flagged as hypothetical.
-
-⸻
-
-Data Validation & Source Requirements
-	1.	Data Cross-Checking
-	•	Obtain revenue and growth figures from multiple public sources (financial statements, recognized databases, credible news outlets, investor reports, or official filings).
-	•	For each key metric, indicate the data source (e.g., footnotes, inline citations) and note if the data differs across sources.
-	•	If discrepancies exist, explain potential reasons (e.g., different fiscal calendars, preliminary vs. final reports, currency fluctuations).
-	2.	Handling Uncertain or Conflicting Information
-	•	Do not fabricate data. If exact figures are unavailable or conflicting, provide a range or an estimate that is clearly labeled as such, citing the origin of the estimate.
-	•	Include disclaimers about the reliability of estimates where necessary (e.g., "Estimates vary from $X to $Y based on different reporting standards").
-	3.	Self-Awareness & Recent Developments
-	•	For any commentary on expansions, partnerships, market entries, or organizational changes, cross-check at least two sources (press releases, company announcements, credible industry news).
-	•	If only one source is available, mention that the information is based on a single, unverified source.
-	•	If you find no legitimate confirmation, omit or label it as "unverified rumor/claim."
-
-⸻
-
-Report Structure
-	1.	Executive Summary
-	•	Brief overview of ${company}'s positioning and a high-level snapshot of its recent performance (with key metrics and source references).
-	2.	Detailed Performance Review
-	•	3–5-year revenue trend, growth rates, and other relevant KPIs.
-	•	For each number, include the source and any conflicting data from alternative sources.
-	•	Discuss underlying growth drivers with citations (e.g., new product lines, market expansions, acquisition synergies).
-	3.	Product/Service Portfolio Analysis
-	•	Categorize offerings into "Established" vs. "Recent/Emerging," providing launch timelines and documentation or public records supporting each claim.
-	•	If adoption metrics are available (market share, user base, etc.), cite them properly.
-	4.	Market Environment & Trends
-	•	Identify demand-side drivers (shifts in customer behavior, compliance regulations, industry digital transformation).
-	•	Discuss supply-side factors (competitive intensity, barriers to entry, technological developments).
-	•	Where possible, mention at least two corroborating sources for major trends.
-	5.	Competitive Landscape
-	•	Segment competitors by archetype (e.g., specialized providers, large incumbents, disruptive startups).
-	•	Reference specific, verifiable data (market share estimates, user adoption) and explain any variations in reported figures.
-	6.	Growth Opportunities
-	•	Present 3–5 strategic areas (e.g., new product lines, partnerships, M&A).
-	•	Reference comparable market cases or success stories, citing where you derived those comparisons.
-	•	Acknowledge any assumptions or data gaps (e.g., if no direct competitor data is available).
-	7.	What We Like vs. Potential Concerns
-	•	Summarize key positive attributes (e.g., strong customer retention, unique IP, favorable brand perception).
-	•	Outline risks or areas needing due diligence (e.g., questionable financial disclosures, over-reliance on a single market, uncertain regulatory compliance).
-	•	For each point, provide a brief reference to data sources or label as an informed hypothesis if precise data is scarce.
-	8.	Conclusion & Next Steps
-	•	High-level takeaways on ${company}'s investment merits.
-	•	Specific due diligence questions or areas to investigate (financial audits, customer/partner calls, regulatory risk assessments).
-	•	Reference any data points that were insufficiently verified and could be a priority in due diligence.
-
-⸻
-
-Writing Style & Accuracy Protocol
-	•	Neutral, Fact-Based Tone: Focus on verifiable facts and label speculation or estimates accordingly.
-	•	Citations & Transparency: Each key metric or statement should either link to a credible source or include a footnote describing how the data was derived.
-	•	Conflicting Data Handling: Always acknowledge the existence of conflicting data or rumors, explaining plausible reasons for the discrepancy.
-	•	No Hallucinations: If certain data or details can't be confirmed, state "unavailable" or "uncertain." Avoid making definitive claims without evidence.`;
-
-    navigator.clipboard.writeText(promptTemplate);
-    setNotificationText("Detailed Target Report prompt copied!");
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 3000);
+    try {
+      navigator.clipboard.writeText(prompts.target);
+      setNotificationText("Detailed Target Report prompt copied!");
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 3000);
+    } catch (error) {
+      console.error('Copy failed:', error);
+      toast.error('Failed to copy. Please try again.');
+    }
   };
 
   const generateMarketScanPrompt = () => {
-    const company = targetCompany.trim() || "COMPANY";
+    if (!prompts.market) {
+      toast.error('No prompt to copy');
+      return;
+    }
     
-    const promptTemplate = `
-Role & Context
-
-You are an advanced large language model generating a comprehensive market scan for the sector in which ${company} operates. Your goal is to map the entire market, including major archetypes of competitors, TAM/SAM sizing, and growth rates, using publicly accessible, reputable data. Cross-verify all major claims and highlight any conflicting figures with disclaimers.
-
-Objectives
-	1.	Market Segmentation & Archetypes
-	•	Provide a high-level taxonomy of the market (e.g., corporate service providers, independent capital market specialists, niche fintechs, etc.).
-	•	List key players in each archetype (ensure missing or newly acquired entities are correctly listed).
-	•	Explicitly include major  names in this market.
-	2.	Market Sizing: TAM & SAM
-	•	Differentiate between Total Addressable Market (TAM) and the Serviceable Addressable Market (SAM).
-	•	Offer numerical estimates (ranges are acceptable if sources conflict).
-	•	Cite sources (industry reports, government data, reputable financial/research databases).
-	•	Note disclaimers if you find only partial data.
-	3.	Market Growth Rates & Dynamics
-	•	Provide recent and projected CAGR or year-over-year growth figures for the industry.
-	•	Cross-check from at least two independent sources (e.g., industry associations, market analysts, financial statements of major players).
-	•	Indicate known or suspected regional variations (e.g., specific growth drivers in Southern Europe vs. North America).
-	4.	Regulatory & Technological Trends
-	•	Outline major regulatory frameworks or licenses relevant to this sector (especially if they affect entry or growth).
-	•	Highlight tech-driven changes (digitization, AI solutions, data security requirements).
-	•	Provide examples of how these trends have impacted actual market participants.
-	5.	Competitive Intensity & Key Differentiators
-	•	Discuss how competition is structured (e.g., pricing, brand, specialized capabilities).
-	•	Note if any segments are consolidated or if M&A is active (any recent mergers or buyouts).
-	•	Highlight unique differentiators for certain archetypes (e.g., trust providers with global footprints, fintechs with advanced automation).
-	6.	Emerging Opportunities & Threats
-	•	Identify potential growth frontiers in the market (e.g., new customer segments, tech integration).
-	•	Call out major threats (e.g., regulatory upheaval, cybersecurity risks, economic headwinds).
-	•	If possible, quantify these where data permits.
-
-Data Validation & Source Requirements
-	•	Multisource Verification
-	•	For market size/growth rates, reference 2–3 major industry reports or statistical databases.
-	•	For competitor listings, use credible directories or recognized industry-specific publications.
-	•	Updates & Historical Perspective
-	•	Provide at least 3–5 years of historical market data if available, plus short-term forecasts (next 2–3 years).
-	•	Cite any region-specific analysis if relevant (e.g., EMEA vs. Americas vs. APAC).
-	•	Handling Conflicts
-	•	When sources differ, present both viewpoints, explaining potential reasons (methodology differences, sampling bias, etc.).
-	•	No Fabrications
-	•	If market estimates for certain regions are not publicly disclosed, mark them as "unknown" or "unavailable".
-	•	Provide best estimates or analysis from partial data only if labeled as such.
-
-Report Structure
-	1.	Executive Overview
-	•	Broad landscape summary: top-level market size, overall growth rate, major segments.
-	•	Brief mention of which archetypes dominate.
-	2.	Detailed Market Segmentation
-	•	Break down each archetype (trust/fund corporate providers, independents, fintech entrants, etc.).
-	•	List key players in each, referencing any ownership changes or brand consolidations.
-	3.	TAM & SAM Analysis
-	•	Present numeric estimates or ranges for total market size, then the serviceable subset.
-	•	Footnote each figure with source references (e.g., "Industry Report 2024," "S&P Global Market Intelligence").
-	4.	Growth Rates & Drivers
-	•	Provide historical and projected growth data.
-	•	Highlight key regional or segment-level growth drivers (e.g., adoption of digital solutions, regulatory changes).
-	5.	Regulatory & Tech Trends
-	•	Summarize relevant compliance requirements (licensing, state vs. federal regulations).
-	•	Outline major technological shifts shaping the market (e.g., automation, data analytics).
-	6.	Competitive Intensity
-	•	Comment on M&A trends, market consolidation, and whether competition is driven by price, service differentiation, or niche specialization.
-	•	Identify any emerging challengers or innovative newcomers.
-	7.	Opportunities & Threats
-	•	Potential expansions (new geographies, segments).
-	•	Market saturation risk, regulatory crackdowns, or macroeconomic factors impacting demand.
-	•	Label any data-based or anecdotal items with relevant sources or disclaimers.
-	8.	Conclusion & Key Takeaways
-	•	Summarize the most critical insights (market trajectory, key archetypes, main risk factors).
-	•	Note any data insufficiencies and suggest areas for further specialized research.`;
-
-    navigator.clipboard.writeText(promptTemplate);
-    setNotificationText("Detailed Market Scan prompt copied!");
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 3000);
+    try {
+      navigator.clipboard.writeText(prompts.market);
+      setNotificationText("Detailed Market Scan prompt copied!");
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 3000);
+    } catch (error) {
+      console.error('Copy failed:', error);
+      toast.error('Failed to copy. Please try again.');
+    }
   };
 
   const generateAcquirerPrompt = () => {
-    const company = targetCompany.trim() || "COMPANY";
+    if (!prompts.acquirers) {
+      toast.error('No prompt to copy');
+      return;
+    }
     
-    const promptTemplate = `
-Role & Context
-You are an advanced large language model with extensive experience in M&A research and financial analysis. You have access to a detailed teaser report on ${company}, including its market positioning, product lines, financial trajectory, and competitive landscape. Your objective is to leverage that report's insights—and your broader knowledge base—to identify an initial set of potential acquirers who would have a strategic or financial interest in ${company}. The end goal is to help our Private Capital Team prioritize whom to approach first for potential discussions and due diligence.
-
-⸻
-
-Key Objectives
-1. Identify Likely Acquirers
-• Propose 5–10 organizations (or more, if justified) with a high strategic or financial fit for ${company}.
-• Include both strategic acquirers (industry peers, adjacent players, or corporates looking to expand) and financial sponsors (private equity, venture capital, or family offices with relevant sector focus).
-2. Provide Rationale & Fit
-• For each potential acquirer, explain the specific synergy or strategic rationale (e.g., product adjacency, regional expansion, technological complement, etc.).
-• Reference data points or inferences from the teaser report (e.g., ${company}'s market segment, financial metrics, product capabilities) to justify the match.
-3. Prioritize & Categorize
-• Group the list into logical categories (e.g., "High-Fit Strategic," "High-Fit Financial," "Longer-Shot/Opportunistic Acquirers").
-• Offer a ranked or tiered view, highlighting who the Private Capital Team should approach first vs. subsequently.
-4. Outline Potential Outreach Strategy
-• Recommend messaging angles or value propositions that could resonate with each acquirer type.
-• Note any known constraints or critical sensitivities (e.g., regulatory considerations, existing partnerships or competitor relationships).
-
-⸻
-
-Research & Analysis Requirements
-1. Strategic Acquirer Profiles
-• Look for complementary product lines, overlapping target markets, or an established M&A track record in ${company}'s sector.
-• Leverage recent press releases, financial statements, and other public disclosures to validate that these acquirers are actively seeking acquisitions.
-2. Financial Sponsor Profiles
-• Include private equity and growth funds with relevant sector focus or known interest in companies at ${company}'s revenue/EBITDA scale.
-• Highlight funds' typical deal size range and past investments in related markets.
-3. Synergy & Value-Add
-• Match each acquirer's strategic goals or investment thesis (where public) with the capabilities, IP, or customer base of ${company}.
-• Explain how an acquirer could add value (e.g., cross-selling, global distribution, operational expertise).
-4. Feasibility & Potential Constraints
-• Note any known red flags or constraints (e.g., potential overlap with a competitor, anti-trust issues, significant difference in corporate cultures).
-• Indicate if recent news or financial challenges might accelerate or deter a transaction.
-
-⸻
-
-Output Structure
-
-When generating your response:
-1. Executive Summary
-• A concise overview of the top recommended acquirers and why they are prioritized.
-2. Detailed Acquirer Profiles
-• Acquirer Name & Category (Strategic or Financial).
-• Brief Description (sector, primary business lines, market cap or AUM if relevant).
-• Key Synergy Points with ${company} (technology, market adjacency, distribution channels, etc.).
-• Recent M&A or Investment Activity (if publicly known or reported).
-• Recommended Outreach Angle (how best to pique their interest, potential next steps).
-3. Tiered Priority & Roadmap
-• Label each acquirer as Tier 1, Tier 2, or Opportunistic based on the strategic fit and likelihood of interest.
-• Provide a suggested initial outreach plan (e.g., immediate calls, warm introductions, partnership pitch).
-4. Additional Notes & Risks
-• Caveats or uncertainties that might affect interest or negotiation leverage.
-• Potential competitive sensitivities among the listed acquirers.
-5. Conclusion & Next Steps
-• Summarize the recommended short-list of acquirers and the immediate action plan for the Private Capital Team.
-• Suggest how to further refine the list (e.g., direct communication with the target's management, analysis of confidentiality constraints).
-
-⸻
-
-Final Instruction
-
-Utilize the details from the ${company} teaser report and your broader knowledge of M&A patterns to compile a well-reasoned, actionable list of potential acquirers. Ensure your output is data-driven, references verifiable sources or market signals, and presents a clear rationale for each recommendation. Identify high-priority leads and outline a feasible outreach strategy so that our Private Capital Team can begin engaging acquirers quickly and effectively.
-
---- IMPORTANT: PASTE THE FULL TEASER REPORT ABOUT ${company} BELOW THIS LINE ---`;
-
-    navigator.clipboard.writeText(promptTemplate);
-    setNotificationText("Potential Acquirer Report prompt copied!");
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 3000);
+    try {
+      navigator.clipboard.writeText(prompts.acquirers);
+      setNotificationText("Potential Acquirer Report prompt copied!");
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 3000);
+    } catch (error) {
+      console.error('Copy failed:', error);
+      toast.error('Failed to copy. Please try again.');
+    }
   };
 
   const generateSummaryPrompt = () => {
-    const company = targetCompany.trim() || "COMPANY";
-    const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    if (!prompts.summary) {
+      toast.error('No prompt to copy');
+      return;
+    }
     
-    const promptTemplate = `
-It is ${today}. Provide a concise, executive-level summary of ${company} that a private capital partner can absorb quickly.
-	1.	Data Sources & Constraints
-	•	Use only verifiable facts from the attached target scan, market scan, and acquirers report.
-	•	Do not introduce external or speculative information; stick to what's in the reports.
-	2.	Scope of Analysis
-	•	Target Overview: Core business model, key products/services, financial highlights, and strategic positioning.
-	•	Market Context: Size, growth trends, major competitors, and distinctive market dynamics influencing the target.
-	•	Risk Factors: Any operational, financial, or market-related risks highlighted in the materials.
-	•	Potential Acquirers: List relevant strategic or financial buyers, explaining why they might be interested.
-	3.	Format & Style
-	•	Begin with an executive summary (1–2 paragraphs max) capturing the most critical insights.
-	•	Provide bullet-pointed sections for easy scanning (covering target overview, market context, risks, and acquirers).
-	•	Use concise language, avoiding long-winded paragraphs or generic statements.
-	4.	Actionable Insights
-	•	Highlight specific advantages, red flags, and synergy opportunities.
-	•	Emphasize why these points matter for a private capital partner's due diligence process.
-	5.	Time-Sensitive Context
-	•	Incorporate any mention of pressing timelines, key inflection points, or upcoming decision milestones noted in the reports.
-
-Goal:
-Deliver a short report (around 3-4 pages) that equips the partner with immediate, high-value takeaways and impresses potential acquirers with the depth of insight—again, using only the attached materials.`;
-
-    navigator.clipboard.writeText(promptTemplate);
-    setNotificationText("Summary Teaser Report prompt copied!");
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 3000);
+    try {
+      navigator.clipboard.writeText(prompts.summary);
+      setNotificationText("Summary Teaser Report prompt copied!");
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 3000);
+    } catch (error) {
+      console.error('Copy failed:', error);
+      toast.error('Failed to copy. Please try again.');
+    }
   };
 
   return (
@@ -341,15 +255,34 @@ Deliver a short report (around 3-4 pages) that equips the partner with immediate
             <div className="space-y-4">
               <button
                 onClick={generateTargetPrompt}
-                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                disabled={isLoading.target || !prompts.target}
+                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Copy Detailed Target Report Prompt
+                {isLoading.target ? (
+                  <span className="inline-flex items-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Loading...
+                  </span>
+                ) : "Copy Detailed Target Report Prompt"}
               </button>
+
               <button
                 onClick={generateMarketScanPrompt}
-                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                disabled={isLoading.market || !prompts.market}
+                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Copy Detailed Market Scan Prompt
+                {isLoading.market ? (
+                  <span className="inline-flex items-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Loading...
+                  </span>
+                ) : "Copy Detailed Market Scan Prompt"}
               </button>
               <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                 Use with Deep Research LLM directly
@@ -363,9 +296,18 @@ Deliver a short report (around 3-4 pages) that equips the partner with immediate
               <div>
                 <button
                   onClick={generateAcquirerPrompt}
-                  className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                  disabled={isLoading.acquirers || !prompts.acquirers}
+                  className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Copy Potential Acquirer Report Prompt
+                  {isLoading.acquirers ? (
+                    <span className="inline-flex items-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Loading...
+                    </span>
+                  ) : "Copy Potential Acquirer Report Prompt"}
                 </button>
                 <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                   Use with Deep Research LLM + paste target report
@@ -374,9 +316,18 @@ Deliver a short report (around 3-4 pages) that equips the partner with immediate
               <div>
                 <button
                   onClick={generateSummaryPrompt}
-                  className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                  disabled={isLoading.summary || !prompts.summary}
+                  className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Copy Summary Teaser Prompt
+                  {isLoading.summary ? (
+                    <span className="inline-flex items-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Loading...
+                    </span>
+                  ) : "Copy Summary Teaser Prompt"}
                 </button>
                 <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                   Use with ChatGPT GPT-4.5 model + attach all 3 reports
